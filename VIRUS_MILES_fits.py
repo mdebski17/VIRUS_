@@ -64,7 +64,7 @@ pca = PCA().fit(new_models.T)
 y = np.cumsum(pca.explained_variance_ratio_)
 n_components = np.interp(0.99, y, np.arange(len(y))+1)
 #results in 5.9... so choose 6 components
-n_components=20
+n_components=6
    
 n_samples=len(info)
 pca = PCA(n_components)
