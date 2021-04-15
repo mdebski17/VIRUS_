@@ -71,6 +71,20 @@ pca = PCA(n_components)
 
 H = pca.fit_transform(new_models.T) 
 
+from miles_library_codes import get_pca_miles, get_pca_fsps, get_pca_dr1qso
+n_components=20
+H = get_pca_miles(n_components=n_components)
+H=H.transpose()
+zbins = np.linspace(0.00, 0.47, 47*10+1)
+Hg = get_pca_fsps(zbins=zbins)
+Hg=Hg.transpose()
+Hg=Hg[:,:,0]
+zbins_qso = np.linspace(0.5, 3.5, int((3.5-0.4)/0.01+1))
+Hq = get_pca_dr1qso(zbins=zbins_qso) 
+Hq=Hq.transpose()
+Hq=Hq[:,:,0]
+
+
 # =============================================================================
 # There are better ways to do this, but I thought I would share a plotting
 # setup that I enjoy.
@@ -152,8 +166,8 @@ mask[badspectra] = True
 new_spectra=spectra*1
 new_spectra[mask]=np.nan
 
-#Chooses only spectra with s/n >10
-sn_select=np.where(info['sn']>10)[0]
+#Chooses only spectra with s/n >1
+sn_select=np.where(info['sn']>1)[0]
 
 
 for i in range(0,20):
@@ -169,9 +183,15 @@ for i in range(0,20):
     select=np.isfinite(new_spectra[g])
     #Create the coefficient matrix using MILES library H
     coeff=np.linalg.lstsq(H[select],(new_spectra[g])[select])[0]
-    B=np.dot(H,coeff)
+    coeff_qso=np.linalg.lstsq(Hq[select],(new_spectra[g])[select])[0]
+    coeff_galaxy=np.linalg.lstsq(Hg[select],(new_spectra[g])[select])[0]
+    A=np.dot(H,coeff)
+    B=np.dot(Hq,coeff_qso)
+    C=np.dot(Hg,coeff_galaxy)
     #plot the MILES fit 
-    plt.plot(wave,B+np.nanmean(new_spectra[g]),label="MILES Library Fit")
+    plt.plot(wave,A+np.nanmean(new_spectra[g]),label="MILES Library Fit")
+    plt.plot(wave,B+np.nanmean(new_spectra[g]),label='Quasar fit')
+    plt.plot(wave,C+np.nanmean(new_spectra[g]),label="Galaxy fit")
     plt.legend(loc='lower right')
     
 
